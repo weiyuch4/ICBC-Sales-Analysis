@@ -320,8 +320,3 @@ def calculate_age(birthday):
     else:
         return today.year - birthday.year
 
-
-if __name__ == '__main__':
-    x = SussexData()
-    x.get_postal_code_breakdown()
-    # x.find_transactions_breakdown(datetime.datetime(2020, 3, 12))
