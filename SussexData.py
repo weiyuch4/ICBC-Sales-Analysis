@@ -6,11 +6,14 @@ import pyodbc
 class SussexData:
 
     def __init__(self):
+        os.chdir("..")
+        parent_dir_path = os.path.abspath(os.curdir)
         self.conn = pyodbc.connect(
             r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
-            r'DBQ=C:\Users\weiyu\Documents\sussexProject\south_surrey_may_30_2020.mdb;'
+            rf'DBQ={parent_dir_path}\South Surrey.mdb;'
         )
         self.cur = self.conn.cursor()
+        os.chdir(f"{parent_dir_path}\RENEWAL")
 
     def generate_mail_list(self):
         try:
