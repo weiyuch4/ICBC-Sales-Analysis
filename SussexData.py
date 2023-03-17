@@ -105,7 +105,7 @@ class SussexData:
 
             sales_table = [
                 {
-                    'Total Sales': [day1_sales['sales'], day2_sales['sales'], sales_diff],
+                    'Total Sales': ['$' + str(d1_sales['sales']), '$' + str(d2_sales['sales']), '$' + str(sales_diff)],
                     '# of Transactions': [day1_sales['transactions'], day2_sales['transactions'], transactions_diff]
                 },
                 [day1_sales['date'], day2_sales['date'], 'Difference']
