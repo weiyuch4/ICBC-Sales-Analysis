@@ -161,7 +161,7 @@ class SussexData:
 
             sales_table = [
                 {
-                    "Total Sales": [monthly_sales, yearly_sales]
+                    "Total Sales": ['$' + str(round(monthly_sales, 2)), '$' + str(round(yearly_sales, 2))]
                 },
                 [f"From {month_start_date} to Today", f"From {year_start_date} to Today"]
             ]
