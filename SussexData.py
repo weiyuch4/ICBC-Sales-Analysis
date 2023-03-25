@@ -107,7 +107,8 @@ class SussexData:
 
             sales_table = [
                 {
-                    'Total Sales': ['$' + str(d1_sales['sales']), '$' + str(d2_sales['sales']), '$' + str(sales_diff)],
+                    'Total Sales': ['$' + "{:,}".format(d1_sales['sales']), '$' + "{:,}".format(d2_sales['sales']),
+                                    '$' + "{:,}".format(sales_diff)],
                     '# of Transactions': [d1_sales['transactions'], d2_sales['transactions'], transactions_diff]
                 },
                 [d1_sales['date'], d2_sales['date'], 'Difference']
@@ -129,44 +130,27 @@ class SussexData:
         except Exception as err:
             print(f"Unexpected {err=}, {type(err)=}")
 
-    def find_current_premiums(self):
+    def get_total_premiums(self, start_date, end_date):
         try:
-            today = date.today()
-            first_day_of_month = datetime(today.year, today.month, 1)
-            str_first_day_of_month = first_day_of_month.strftime("%b %d, %Y")
-            
+            first_day = start_date.strftime("%b %d, %Y")
+
             query = (
                 f"""select sum(l.premium) from ((clients c 
                 inner join logs l on c.policyno = l.policyno) 
                 inner join [policy details] pd on l.policyno = pd.policyno) 
                 inner join producer p on pd.producerid = p.producerid
-                where l.trandate between #{first_day_of_month}# and #{today}#;"""
+                where l.trandate between #{start_date}# and #{end_date}#;"""
             )
             self.cur.execute(query)
-            monthly_sales = self.cur.fetchall()[0][0]
-            if monthly_sales is None:
-                monthly_sales = 0
-
-            first_day_of_year = datetime(today.year, 1, 1)
-            str_first_day_of_year = first_day_of_year.strftime("%b %d, %Y")
-            
-            query = (
-                f"""select sum(l.premium) from ((clients c 
-                    inner join logs l on c.policyno = l.policyno) 
-                    inner join [policy details] pd on l.policyno = pd.policyno) 
-                    inner join producer p on pd.producerid = p.producerid
-                    where l.trandate between #{first_day_of_year}# and #{today}#;"""
-            )
-            self.cur.execute(query)
-            yearly_sales = self.cur.fetchall()[0][0]
-            if yearly_sales is None:
-                yearly_sales = 0
+            sales = self.cur.fetchall()[0][0]
+            if sales is None:
+                sales = 0
 
             sales_table = [
                 {
-                    "Total Sales": ['$' + str(round(monthly_sales, 2)), '$' + str(round(yearly_sales, 2))]
+                    "Total Sales": ['$' + "{:,}".format(round(sales, 2))]
                 },
-                [f"From {str_first_day_of_month} to Today", f"From {str_first_day_of_year} to Today"]
+                [f"From {first_day} to Today"]
             ]
 
             return sales_table
@@ -306,6 +290,37 @@ class SussexData:
                 table['Number of Clients'].append(item[1])
 
             return table
+
+        except Exception as err:
+            print(f"Unexpected {err=}, {type(err)=}")
+
+    def get_transaction_time(self, month, year):
+        try:
+            query = (
+                f"""select format(l.trandate, 'ddd'), l.trantime, count(*) 
+                    from (((clients c inner join logs l on c.policyno = l.policyno) 
+                    inner join [policy details] pd on l.policyno = pd.policyno) 
+                    inner join producer p on pd.producerid = p.producerid) 
+                    inner join [policy types] pt on l.typesid = pt.typesid
+                    where month(l.trandate) = {month} and year(l.trandate) = {year} and l.trantime > 0 
+                    group by format(l.trandate, 'ddd'), l.trantime 
+                    order by format(l.trandate, 'ddd'), l.trantime;"""
+            )
+
+            self.cur.execute(query)
+            transaction_time = self.cur.fetchall()
+
+            columns = ['Morning', 'Afternoon', 'Evening']
+            days = [day for day in
+                    ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] for _ in range(3)]
+            transaction_dict = {day: [0]*3 for day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']}
+
+            for row in transaction_time:
+                transaction_dict[row[0]][row[1]-1] = row[2]
+
+            transactions = sum(transaction_dict.values(), [])
+
+            return {'Transaction Time': columns * 7, 'Transactions': transactions, 'Day': days}
 
         except Exception as err:
             print(f"Unexpected {err=}, {type(err)=}")
